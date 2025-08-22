@@ -1,0 +1,17 @@
+{
+  "name": "tinder-dev",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Pranshu Agrawal",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "module": "^1.2.5",
+    "node": "^24.6.0"
+  }
+}
