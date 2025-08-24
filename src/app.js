@@ -1,6 +1,18 @@
 const express = require("express");
 const app = express();
 
+const {adminAuth} = require("./middlewares/adminAuth")
+const {userAuth} = require("./middlewares/userAuth")
+
+app.use("/admin", adminAuth)
+app.use("/user", userAuth)
+
+app.get("/admin/getAllUser",(req,res,next) => {
+  res.send("all admin data sent")
+})
+app.get("/user/getAllUser", (req,res,next) => {
+  res.send("All user data sent")
+})
 app.use("/test", (req,res,next) => {
   res.send("This is hello trom test connection");
 });
