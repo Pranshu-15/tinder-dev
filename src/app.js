@@ -52,6 +52,19 @@ app.get("/feed", async(req,res) => {
     res.status(404).send("No user found")
   }
 })
+app.delete("/user", async (req,res) => {
+  const userId = req.body._id
+  try{
+    const user = await User.findOneAndDelete({_id:userId})
+    if(user){
+      res.send("User Deleted Successfully")
+    }else{
+      res.send("No user found by the id")
+    }
+  }catch(err){
+    res.status(400).send("Something went wrong")
+  }
+})
 
 // app.use("/admin", adminAuth)
 // app.use("/user", userAuth)
