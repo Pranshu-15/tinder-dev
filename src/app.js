@@ -17,6 +17,28 @@ app.post("/signup", async(req,res) => {
     res.status(400).send("User not saved successfully")
   }
 })
+app.get("/user", async(req,res) => {
+  const userEmail =  req.body.emailId
+    try{
+      const user = await User.find({emailId:userEmail})
+      if(user.length === 0){
+        res.status(404).send("User not found with the searched emailId")
+      }else{
+
+        res.send(user)
+      }
+    }catch(err){
+      res.status(400).send("Something went wrong")
+    }
+})
+app.get("/feed", async(req,res) => {
+  try{
+    const users = await User.find({})
+    res.send(users)
+  }catch(err){
+    res.status(404).send("No user found")
+  }
+})
 // app.use("/admin", adminAuth)
 // app.use("/user", userAuth)
 
