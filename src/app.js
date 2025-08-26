@@ -14,7 +14,7 @@ app.post("/signup", async(req,res) => {
     await user.save()
     res.send("User Saved Successfully")
   } catch(err)  {
-    res.status(400).send("User not saved successfully")
+    res.status(400).send("User not saved successfully"+err.message)
   }
 })
 app.get("/userById", async(req,res) => {
@@ -69,10 +69,10 @@ app.patch("/user", async(req,res) => {
   const data = req.body
   const userId = req.body._id
   try{
-    await User.findOneAndUpdate({_id:userId},data)
+    await User.findOneAndUpdate({_id:userId},data,{runValidators:true})
     res.send("User Updated Successfully")
   }catch(err){
-    res.status(400).send("Something went wrong")
+    res.status(400).send("Update Failed:"+err.message)
   }
 })
 
