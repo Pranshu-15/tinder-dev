@@ -53,14 +53,24 @@ app.get("/feed", async(req,res) => {
   }
 })
 app.delete("/user", async (req,res) => {
-  const userId = req.body._id
+  const userEmailId = req.body.emailId
   try{
-    const user = await User.findOneAndDelete({_id:userId})
+    const user = await User.findOneAndDelete({emailId:userEmailId})
     if(user){
       res.send("User Deleted Successfully")
     }else{
       res.send("No user found by the id")
     }
+  }catch(err){
+    res.status(400).send("Something went wrong")
+  }
+})
+app.patch("/user", async(req,res) => {
+  const data = req.body
+  const userId = req.body._id
+  try{
+    await User.findOneAndUpdate({_id:userId},data)
+    res.send("User Updated Successfully")
   }catch(err){
     res.status(400).send("Something went wrong")
   }
