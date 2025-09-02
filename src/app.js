@@ -1,90 +1,120 @@
 const express = require("express");
 const app = express();
-
+const { validateSignUpData } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 // const {adminAuth} = require("./middlewares/adminAuth")
 // const {userAuth} = require("./middlewares/userAuth")
 // const {errs} = require("./middlewares/errs")
-const connectDB = require("./config/database")
-const User = require("./models/user")
-app.use(express.json())
-app.post("/signup", async(req,res) => {
-  
-  const user = new User(req.body)
-  try{
-    await user.save()
-    res.send("User Saved Successfully")
-  } catch(err)  {
-    res.status(400).send("User not saved successfully"+err.message)
+const connectDB = require("./config/database");
+const User = require("./models/user");
+app.use(express.json());
+app.post("/signup", async (req, res) => {
+  try {
+    //validation of data
+    validateSignUpData(req);
+    const { firstName, lastName, emailId, password, gender,skills } = req.body;
+    //ENCRYPTION OF PASSWORD
+    const hashPassword = await bcrypt.hash(password, 12);
+    // Creating a new instance of User Model 
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      gender,
+      skills,
+      password: hashPassword,
+    });
+    await user.save();
+    res.send("User Saved Successfully");
+  } catch (err) {
+    res.status(400).send("User Save Unsuccessfull " + err.message);
   }
-})
-app.get("/userById", async(req,res) => {
-  const userId = req.body._id
-  try{
-    const user = await User.findById(userId)
-    if(user.length === 0){
-      res.status(404).send("User not found with searched ID")
-    }else{
-      res.send(user)
-    }
-  }catch(err){
-    res.status(400).send("Something went wrong")
-  }
-})
-app.get("/user", async(req,res) => {
-  const userEmail =  req.body.emailId
-    try{
-      const user = await User.find({emailId:userEmail})
-      if(user.length === 0){
-        res.status(404).send("User not found with the searched emailId")
-      }else{
+});
 
-        res.send(user)
-      }
-    }catch(err){
-      res.status(400).send("Something went wrong")
+app.post("/login", async (req,res) => {
+  try{
+    const {emailId, password} = req.body
+    const user = await User.findOne({emailId:emailId})
+    if(!user){
+      throw new Error ("Invalid Credentials")
     }
-})
-app.get("/feed", async(req,res) => {
-  try{
-    const users = await User.find({})
-    res.send(users)
-  }catch(err){
-    res.status(404).send("No user found")
-  }
-})
-app.delete("/user", async (req,res) => {
-  const userEmailId = req.body.emailId
-  try{
-    const user = await User.findOneAndDelete({emailId:userEmailId})
-    if(user){
-      res.send("User Deleted Successfully")
+    const isPasswordValid = await bcrypt.compare(password,user.password)
+    if(isPasswordValid){
+      res.send("Logged In Successfully")
     }else{
-      res.send("No user found by the id")
+      throw new Error("Invalid Credentials")
     }
   }catch(err){
-    res.status(400).send("Something went wrong")
+    res.status(400).send("Login Unsuccessfull " + err.message)
   }
 })
-app.patch("/user/:userId", async(req,res) => {
-  const data = req.body
-  const userId = req.params?.userId
-  try{
-    const ALLOWED_UPDATES = ["photoURL","about","skills"]
-    const isUpdateAllowed = Object.keys(data).every((k) => 
-    ALLOWED_UPDATES.includes(k)
-    )
-    if(!isUpdateAllowed){
-      throw new Error("Update is not allowed")
+app.get("/userById", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const user = await User.findById(userId);
+    if (user.length === 0) {
+      res.status(404).send("User not found with searched ID");
+    } else {
+      res.send(user);
     }
-    if(data?.skills.length > 10){
-      throw new Error ("You can insert only 10 skills")
-    }
-    await User.findOneAndUpdate({_id:userId},data,{runValidators:true})
-    res.send("User Updated Successfully")
-  }catch(err){
-    res.status(400).send("Update Failed:"+err.message)
+  } catch (err) {
+    res.status(400).send("Something went wrong");
   }
-})
+});
+app.get("/user", async (req, res) => {
+  const userEmail = req.body.emailId;
+  try {
+    const user = await User.find({ emailId: userEmail });
+    if (user.length === 0) {
+      res.status(404).send("User not found with the searched emailId");
+    } else {
+      res.send(user);
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.send(users);
+  } catch (err) {
+    res.status(404).send("No user found");
+  }
+});
+app.delete("/user", async (req, res) => {
+  const userEmailId = req.body.emailId;
+  try {
+    const user = await User.findOneAndDelete({ emailId: userEmailId });
+    if (user) {
+      res.send("User Deleted Successfully");
+    } else {
+      res.send("No user found by the id");
+    }
+  } catch (err) {
+    res.status(400).send("Something went wrong");
+  }
+});
+app.patch("/user/:userId", async (req, res) => {
+  const data = req.body;
+  const userId = req.params?.userId;
+  try {
+    const ALLOWED_UPDATES = ["photoURL", "about", "skills"];
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      ALLOWED_UPDATES.includes(k)
+    );
+    if (!isUpdateAllowed) {
+      throw new Error("Update is not allowed");
+    }
+    if (data?.skills.length > 10) {
+      throw new Error("You can insert only 10 skills");
+    }
+    await User.findOneAndUpdate({ _id: userId }, data, { runValidators: true });
+    res.send("User Updated Successfully");
+  } catch (err) {
+    res.status(400).send("Update Failed:" + err.message);
+  }
+});
 
 // app.use("/admin", adminAuth)
 // app.use("/user", userAuth)
@@ -115,11 +145,11 @@ app.patch("/user/:userId", async(req,res) => {
 const PORT = 7777;
 connectDB()
   .then(() => {
-    console.log("Database connection established successfully")
-    app.listen(PORT, (req,res,next) => {
-  console.log(`Server is running successfully on PORT: ${PORT}`)
-})
+    console.log("Database connection established successfully");
+    app.listen(PORT, (req, res, next) => {
+      console.log(`Server is running successfully on PORT: ${PORT}`);
+    });
   })
   .catch((err) => {
-      console.log("Database cannot be established")
-  }) 
+    console.log("Database cannot be established");
+  });
