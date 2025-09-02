@@ -65,10 +65,20 @@ app.delete("/user", async (req,res) => {
     res.status(400).send("Something went wrong")
   }
 })
-app.patch("/user", async(req,res) => {
+app.patch("/user/:userId", async(req,res) => {
   const data = req.body
-  const userId = req.body._id
+  const userId = req.params?.userId
   try{
+    const ALLOWED_UPDATES = ["photoURL","about","skills"]
+    const isUpdateAllowed = Object.keys(data).every((k) => 
+    ALLOWED_UPDATES.includes(k)
+    )
+    if(!isUpdateAllowed){
+      throw new Error("Update is not allowed")
+    }
+    if(data?.skills.length > 10){
+      throw new Error ("You can insert only 10 skills")
+    }
     await User.findOneAndUpdate({_id:userId},data,{runValidators:true})
     res.send("User Updated Successfully")
   }catch(err){
