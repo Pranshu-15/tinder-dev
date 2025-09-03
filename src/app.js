@@ -2,12 +2,14 @@ const express = require("express");
 const app = express();
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
-// const {adminAuth} = require("./middlewares/adminAuth")
-// const {userAuth} = require("./middlewares/userAuth")
-// const {errs} = require("./middlewares/errs")
 const connectDB = require("./config/database");
 const User = require("./models/user");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/userAuth")
+
 app.use(express.json());
+app.use(cookieParser());
 app.post("/signup", async (req, res) => {
   try {
     //validation of data
@@ -38,9 +40,11 @@ app.post("/login", async (req,res) => {
     if(!user){
       throw new Error ("Invalid Credentials")
     }
-    const isPasswordValid = await bcrypt.compare(password,user.password)
+    const isPasswordValid = await user.validatePassword(password)
     if(isPasswordValid){
-      res.send("Logged In Successfully")
+      //create a JWT token
+      const token = await user.getJWT()
+      res.cookie("token",token,{ expires: new Date(Date.now() + 7 * 3600000)}).send("Logged In Successfully")
     }else{
       throw new Error("Invalid Credentials")
     }
@@ -48,99 +52,27 @@ app.post("/login", async (req,res) => {
     res.status(400).send("Login Unsuccessfull " + err.message)
   }
 })
-app.get("/userById", async (req, res) => {
-  const userId = req.body._id;
-  try {
-    const user = await User.findById(userId);
-    if (user.length === 0) {
-      res.status(404).send("User not found with searched ID");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.status(400).send("Something went wrong");
+app.get("/profile",userAuth, async(req,res) => {
+  try{
+    const user = req.user
+    res.send(user)
+  }catch(err){
+    res.status(400).send("Cannot get user " + err.message)
   }
-});
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-  try {
-    const user = await User.find({ emailId: userEmail });
-    if (user.length === 0) {
-      res.status(404).send("User not found with the searched emailId");
-    } else {
-      res.send(user);
+})
+app.get("/sendConnectionRequest", userAuth, (req,res) => {
+  try{
+    const user = req.user
+    if(!user){
+      throw new Error("Cannot send a connection request. Please login and try again")
     }
-  } catch (err) {
-    res.status(400).send("Something went wrong");
+    console.log("Sending the connection request")
+    res.send(user.firstName + " sent a connection request successfully")
+  }catch(err){
+    res.status(400).send("ERROR " + err.message)
   }
-});
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.send(users);
-  } catch (err) {
-    res.status(404).send("No user found");
-  }
-});
-app.delete("/user", async (req, res) => {
-  const userEmailId = req.body.emailId;
-  try {
-    const user = await User.findOneAndDelete({ emailId: userEmailId });
-    if (user) {
-      res.send("User Deleted Successfully");
-    } else {
-      res.send("No user found by the id");
-    }
-  } catch (err) {
-    res.status(400).send("Something went wrong");
-  }
-});
-app.patch("/user/:userId", async (req, res) => {
-  const data = req.body;
-  const userId = req.params?.userId;
-  try {
-    const ALLOWED_UPDATES = ["photoURL", "about", "skills"];
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-    if (!isUpdateAllowed) {
-      throw new Error("Update is not allowed");
-    }
-    if (data?.skills.length > 10) {
-      throw new Error("You can insert only 10 skills");
-    }
-    await User.findOneAndUpdate({ _id: userId }, data, { runValidators: true });
-    res.send("User Updated Successfully");
-  } catch (err) {
-    res.status(400).send("Update Failed:" + err.message);
-  }
-});
+})
 
-// app.use("/admin", adminAuth)
-// app.use("/user", userAuth)
-
-// app.get("/admin/getAllUser",(req,res,next) => {
-//   try{
-//     throw new Error("Random admin error")
-//     res.send("all admin data sent")
-//   }catch(err){
-//       res.status(500).send("Something went wrong in admin.Contact Support")
-//   }
-// })
-// app.get("/user/getAllUser", (req,res,next) => {
-//   throw new Error("Some random error")
-//   res.send("All user data sent")
-// })
-// app.use("/test", (req,res,next) => {
-//   res.send("This is hello trom test connection");
-// });
-// app.use("/hello", (req,res,next) => {
-//   res.send("This side hello from hello connection")
-// })
-// app.use("/", (req,res,next) => {
-//   res.send("Hello from dashboard")
-// });
-// app.use("/", errs)
 
 const PORT = 7777;
 connectDB()
