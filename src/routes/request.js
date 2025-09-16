@@ -15,9 +15,9 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async(req,res) =
       return res.status(400).send("Invalid Status Type " + status)
     }
 
-    if(fromUserId.toString() === toUserId){
-      return res.status(400).json({message:"You cannot send a connection request to yourself"})
-    }
+    // if(fromUserId.toString() === toUserId){
+    //   return res.status(400).json({message:"You cannot send a connection request to yourself"})
+    // }
     const toUser = await User.findById(toUserId);
     if(!toUser){
       return res.status(404).json({message:"Sending Request to an Invalid User"})
@@ -39,11 +39,11 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async(req,res) =
     })
     const connectionRequestData = await connectionRequest.save()
     res.json({
-      message:"Connection Request Sent Successfully",
+      message:req.user.firstName + " has sent an " + status + " connection request for " + toUser.firstName,
       connectionRequestData,
     })
   }catch(err){
-    res.status(400).send("Cannot send connection request due to " + err.message)
+    res.status(400).send("Cannot send connection request as  " + err.message)
   }
 })
 
