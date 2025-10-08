@@ -47,7 +47,7 @@ authRouter.post("/login", async(req,res) =>{
       // We create a JWT token
       const token = await user.getJWT()
       // We will wrap this token inside a cookie and send it with response in the server
-      res.cookie("token", token,{ expires: new Date(Date.now() + 7 * 3600000)}).send("Logged-in Successfully")
+      res.cookie("token", token,{ expires: new Date(Date.now() + 7 * 3600000)}).send(user)
     }else{
       // If the password is not valid
       throw new Error("Invalid Credentials")
