@@ -5,7 +5,7 @@ const User = require("../models/user");
 const userRouter = express.Router()
 
 
-const USER_SAFE_DATA = "firstName lastName photoURL skills gender age"
+const USER_SAFE_DATA = "firstName lastName photoURL skills gender age about"
 userRouter.get("/user/requests/recived", userAuth, async(req,res) => {
   try{
     const loggedInUser = req.user

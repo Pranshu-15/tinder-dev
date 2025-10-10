@@ -11,6 +11,8 @@ const validateSignUpData = (req) => {
 }
 const validateUpdateFieldData = (req) => {
   const allowedUpdated = [
+    "firstName",
+    "lastName",
     "photoURL",
     "gender",
     "age",

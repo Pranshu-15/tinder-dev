@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
     type:String,
     default:"This is the bio of the user",
     minLength:10,
-    maxLength:50
+    maxLength:500
 
   },
   skills:{
