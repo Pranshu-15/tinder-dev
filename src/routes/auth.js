@@ -10,7 +10,7 @@ authRouter.post("/signup", async (req,res) => {
     //Validation of data
     validateSignUpData(req)
     //Extraction of required fields from req.body
-    const {firstName, lastName, emailId, password, gender, skills} = req.body;
+    const {firstName, lastName, emailId, password} = req.body;
     //Encryption of Password
     const hashPassword = await bcrypt.hash(password, 12)
     //Creating a new instance of a User model
@@ -18,12 +18,18 @@ authRouter.post("/signup", async (req,res) => {
       firstName,
       lastName,
       emailId,
-      gender,
-      skills,
       password:hashPassword,
     });
-    await user.save();
-    res.send("User Saved Successfully")
+    const savedUser = await user.save();
+    // We check the password if it is correct or not
+    const isPasswordValid = await user.validatePassword(password)
+    // If the Password is validated
+    if(isPasswordValid){
+      // We create a JWT token
+      const token = await savedUser.getJWT()
+      // We will wrap this token inside a cookie and send it with response in the server
+      res.cookie("token", token,{ expires: new Date(Date.now() + 7 * 3600000)}).json({message:"User Saved Successfully",data: savedUser})
+    }
   }catch(err){
     res.status(400).send("Error in saving user " + err.message);
   }
@@ -47,7 +53,7 @@ authRouter.post("/login", async(req,res) =>{
       // We create a JWT token
       const token = await user.getJWT()
       // We will wrap this token inside a cookie and send it with response in the server
-      res.cookie("token", token,{ expires: new Date(Date.now() + 7 * 3600000)}).send(user)
+      res.cookie("token", token,{ expires: new Date(Date.now() + 7 * 3600000)}).json({message:"Logged In Successfully",data: user})
     }else{
       // If the password is not valid
       throw new Error("Invalid Credentials")
